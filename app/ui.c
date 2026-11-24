@@ -2707,7 +2707,14 @@ static void list_change_do(int32_t e)
             set_tp(sel_trk(), TP_CHAN, d > 0);
             break;
         case A_MIDI_CC: {                        /* a MIDI track's knob's CC, 0..119 ("KNOB 3 CC") */
+#if BOARD_SMK37
+            int k = 0;
+            while (k < 8 && lst.row[lst.sel].name != MIDI_CC_ROW[k]) k++;
+            if (k == 8) break;
+            int p = midi_cc_par(k);
+#else
             int k = lst.row[lst.sel].name[5] - '1', p = midi_cc_par(k & 7);
+#endif
             set_tp(sel_trk(), p, clampi(proj.trk[sel_trk()].par[p] + (int)accel(EN_ALGO, e), 0, NMIDI_CC - 1));
             break;
         }
@@ -4301,6 +4308,11 @@ static void sp_parts(const char *s)
                     w[m] = 0;
                     if (a)
                         sp_cat(" and ");
+#if BOARD_SMK37
+                    const char *label = smk_knob_label(w);
+                    if (label != w) sp_cat(label);
+                    else
+#endif
                     sp_cat(s_eq(w, "KEYS") ? "keys" : s_eq(w, "WHITE") ? "white keys" : s_eq(w, "BLACK") ? "black keys"
                            : s_eq(w, "PRESET") ? "PRESETS" : s_eq(w, "KNOBS") ? "knobs" : w);
                     a = j + 1;
@@ -4339,6 +4351,9 @@ static void sp_page(void)
     for (int i = 0; i < 4; i++)
         if (k[i].name) {
             sp_cat(any++ ? ", " : ": ");
+#if BOARD_SMK37
+            sp_cat(SMK_KNOB_LABEL[4 + i]); sp_cat(" ");
+#endif
             sp_knob(&k[i]);
         }
 }
@@ -4506,6 +4521,9 @@ static void sp_controls(void)
     sp_parts(t);
     if (!sp_list()) {
         enc_line(t);
+#if BOARD_SMK37
+        smk_master_hint(t, sizeof t);
+#endif
         sp_parts(t);
     }
     while (sp_n && sp_buf[sp_n - 1] == ' ')

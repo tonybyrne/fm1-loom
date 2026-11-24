@@ -10,6 +10,7 @@ payload's start), u32 length; the sections, each 4-aligned. Deterministic: the s
   gen_res.py OUT.bin
 """
 import struct
+import os
 import sys
 from pathlib import Path
 
@@ -24,7 +25,9 @@ def tag(s): return struct.unpack("<I", s.encode())[0]
 
 
 def payload():
-    sections = [("N9S1", gen_909res.payload()), ("LFT1", gen_font.blob())]
+    sections = [("N9S1", gen_909res.payload())]
+    if os.environ.get("BOARD") != "smk37":
+        sections.append(("LFT1", gen_font.blob()))
     head = 8 + 12 * len(sections)
     out, at, table = b"", head, b""
     for t, b in sections:
@@ -41,7 +44,14 @@ def main(argv):
     p = payload()
     Path(argv[1]).parent.mkdir(parents=True, exist_ok=True)
     Path(argv[1]).write_bytes(p)
-    print(f"  ok    the resource region: {len(p)} B (the 909 cymbals, the large type faces)")
+    if os.environ.get("BOARD") == "smk37":
+        fonts = gen_font.blob()
+        rows = [",".join(str(b) for b in fonts[i:i + 32]) for i in range(0, len(fonts), 32)]
+        Path(argv[1]).with_name("smk37_fonts.h").write_text(
+            "/* Generated immutable large-font data. */\nstatic const uint8_t smk37_fonts[] = {\n" +
+            ",\n".join(rows) + "\n};\n")
+    what = "the 909 cymbals; large fonts embedded in the app" if os.environ.get("BOARD") == "smk37" else "the 909 cymbals, the large type faces"
+    print(f"  ok    the resource region: {len(p)} B ({what})")
 
 
 if __name__ == "__main__":

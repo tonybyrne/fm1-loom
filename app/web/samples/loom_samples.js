@@ -565,6 +565,10 @@ export async function sendBank(link, img, onPart) {
     if (r[1]) throw new Error(`The FM-1 couldn't erase its samples (${RC[r[1]] || r[1]}).`);
     return;
   }
+  const info = await link.req(15, [0]);
+  const capacity = (info[1] | info[2] << 7) * 1024;
+  if (info[0] !== 2 || img.length < 20 || new DataView(img.buffer, img.byteOffset, img.byteLength).getUint32(16, true) !== capacity || img.length > capacity)
+    throw new Error("Sample bank and device capacities differ. Rebuild for the destination board before sending.");
   const total = img.length - BANK_HDR;
   for (const [cmd, args, ms, what] of frames(img)) {
     let r;

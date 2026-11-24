@@ -1,0 +1,8 @@
+# Generate both files with BOARD=smk37 before running this native-SMK scenario.
+wait 300
+expect user 0
+upload app/build/loom-smk37-factory.syx
+expect user 0
+readback app/build/loom-smk37-factory.bin
+samples app/build/loom-smk37-factory.bin
+expect user 0

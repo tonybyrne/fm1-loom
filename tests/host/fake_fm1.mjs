@@ -25,7 +25,7 @@ export class FakeFM1 {
   }
   answer(cmd, a) {
     const off = (i) => a[i] | a[i + 1] << 7 | a[i + 2] << 14;
-    if (cmd === 15) return [2, 0, 0, 0, 0, this.count(), 0, 0];
+    if (cmd === 15) return [2, (this.L.BANK_SIZE / 1024) & 127, (this.L.BANK_SIZE / 1024) >> 7, 0, 0, this.count(), 0, 0];
     if (cmd === 17) {
       const o = off(1), n = a[4] | a[5] << 7;
       if (this.open) return [0, ...a.slice(1, 4), 4];
@@ -55,4 +55,3 @@ export class FakeFM1 {
   }
   drain() { this.q.length = 0; }
 }
-

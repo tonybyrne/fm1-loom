@@ -4,12 +4,18 @@
  * do without: the 909 cymbals are silent, large type falls back to the faces built in. */
 #define RES_MAGIC_LRS 0x3153524Cu                    /* "LRS1" */
 #define RES_TAG(a, b, c, d) ((uint32_t)(a) | (uint32_t)(b) << 8 | (uint32_t)(c) << 16 | (uint32_t)(d) << 24)
+#if BOARD_SMK37
+#include "smk37_fonts.h"
+#endif
 
 static uint32_t res_rd32(const uint8_t *p) { return p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24; }
 
 /* the section tagged t and its length, 0 when absent (no region, or not in it) */
 static const uint8_t *res_section(uint32_t t, uint32_t *len)
 {
+#if BOARD_SMK37
+    if (t == RES_TAG('L','F','T','1')) { *len = sizeof smk37_fonts; return smk37_fonts; }
+#endif
     uint32_t n = 0, i, cnt;
     const uint8_t *p = plat_res(&n);
     *len = 0;

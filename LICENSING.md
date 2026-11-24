@@ -34,6 +34,7 @@ endorsed by or derived from teenage engineering; the name is only used descripti
 | What | Origin | Licence |
 | --- | --- | --- |
 | The platform: the FM-1's hardware, the loader and the update, USB, the store, the screen and its fonts, the installer, the host simulator and the browser emulator's core, the Bluetooth glue (`base/device/bt_own*.c`) | fm1-base and felucca-bsp (`base/`) | MPL-2.0 |
+| SMK flash allow-list and input layer (`base/bsp/boards/smk37/flash_map.h`, `fm1_input.h`) | Felucca's SMK branch by Leo Kuroshita and M. Geisler, adapted to felucca-bsp by Tony Byrne; existing notices retained | GPL-3.0-only (`COPYING`); included only by the SMK target |
 | Bluetooth MIDI, pairing, MIDI devices and Bluetooth audio (`base/bt/`) and the radio drivers (`base/bsp/chip/fm1_ble.h`, `fm1_ble_rf.h`, `fm1_bredr.h`), except the parts in the next three rows | [Optimist](https://github.com/w0ts/optimist)'s own Bluetooth stack, Copyright (C) 2026 Henri David (hdavid), offered under GPL-3.0-only or MPL-2.0 ([w0ts/optimist#55](https://github.com/w0ts/optimist/issues/55)) | MPL-2.0 (taken under it) |
 | The SBC encoder Bluetooth audio sends (`base/bt/br/sbc/`) | Android's Bluetooth stack (AOSP), Copyright 1999-2012 Broadcom Corporation, two files changed and marked so | Apache-2.0 (`base/LICENSES/Apache-2.0.txt`) |
 | The elliptic-curve keys of Bluetooth pairing (`base/bt/br/uECC*`, `types.h`, the `.inc` files) | [micro-ecc](https://github.com/kmackay/micro-ecc) by Kenneth MacKay | BSD-2-Clause (below) |

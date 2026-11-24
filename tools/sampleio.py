@@ -24,6 +24,7 @@ record's mark, "AT" at bytes 0xF06..0xF07 (the update loader would erase that se
 on by 4 bytes until none does.
 """
 import math
+import os
 import re
 import struct
 import zlib
@@ -38,6 +39,9 @@ REGIONS = [(0xC1000, 0x1B000),  # the data area after the projects, up to the ca
            (0xE5000, 0x17000),  # fm1-base's PLAT_XDATA1 (92 KB)
            (0x93000, 0x4000)]   # fm1-base's PLAT_XDATA0 (16 KB)
 XDATA = (1, 2)                  # the windows where no sector may carry an update record's mark
+if os.environ.get("BOARD") == "smk37":
+    REGIONS = [(0xB8000, 0x3000), (0xD4000, 0x16000)]
+    XDATA = ()                  # The SMK loader never scans either window for update records.
 REC_MARK = 0xF06                # "AT" there, in a sector: an update record (base/bsp/loader/ldr_core.c)
 BANK_SIZE = sum(n for _, n in REGIONS)
 BANK_HDR = 2048

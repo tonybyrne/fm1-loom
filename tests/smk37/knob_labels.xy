@@ -1,0 +1,46 @@
+# Physical knob captions, while button names remain Loom's.
+wait 300
+listen
+tap HOME
+where
+said K5
+shot knobs-normal.png
+press SEL
+wait 1100
+where
+said SEL button
+where
+said Turn K2 to move, K3 to change it
+shot knobs-help.png
+release SEL
+tap SEQ
+tapkey w0
+key w0 down
+wait 100
+tap ARP
+wait 80
+shot knobs-tricks.png
+key w0 up
+tap HOME
+large 1
+wait 100
+shot knobs-large.png
+large 0
+spin ALGO 1
+knob 2 engine 9
+param 2 9 20
+param 2 13 40
+tap EDIT
+tap SEL
+row ENGINE 2 K5 CC
+wait 400
+turn ALGO 1
+expect par2.13 41
+expect par2.9 20
+wait 100
+shot knobs-midi-list.png
+row ENGINE K5 CC
+wait 400
+turn ALGO 1
+expect par2.9 21
+expect par2.13 41

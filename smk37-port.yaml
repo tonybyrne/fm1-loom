@@ -1,0 +1,150 @@
+# Owner setup for the LOOM-8 SMK-37 port; control setup approved, open questions below.
+# New SMK files: Copyright (C) 2026 Tony Byrne, explicitly approved by owner.
+
+firmware:
+  name: LOOM-8
+  upstream: https://github.com/charlesvestal/fm1-loom
+  base: 22d96133d512137f8fafed274de0ca10ce31a76a
+  family: other
+  board_layer: by_hand
+  platform: fm1-base 7337375 / felucca-bsp 2a5af3d (Felucca-derived)
+  lost_on_smk:
+    - TRS MIDI IN / TRS MIDI clock input
+  priorities:
+    - Preserve all current FM-1 LOOM-8 features and workflows.
+    - Keep FM-1 app, package and loader byte-identical to the baseline.
+    - Match SMK-37 printed controls in UI labels and control diagrams.
+    - Preserve FM-1 project, preset and backup formats where compatible.
+
+delivery:
+  mode: upstream
+  pr: ""                       # Upstream review follows the initial personal-fork publication.
+  fork: https://github.com/tonybyrne/fm1-loom/tree/smk37
+  package: loom-smk37.fwsc, loom-smk37-elite.fwsc, loom-smk37-mke.fwsc
+  usb_name: LOOM-8 SMK-37       # Proposed: existing name is LOOM-8 FM-1.
+  data_family: LOOM8           # Loom payloads/LM8B unchanged; incompatible Felucca data is never adopted.
+  copyright: Copyright (C) 2026 Tony Byrne
+  copyright_status: Explicitly approved; retain all existing Charles Vestal and upstream notices.
+  contributor: Tony Byrne
+  original_author: Charles Vestal
+
+models:
+  - pro
+  - elite
+  - mke
+
+keys:
+  middle: fm1
+  outer: extend
+  outer_drums: {}
+  velocity: factory
+
+samples:
+  bundled_optional_breaks: false
+  preserve_factory_sample_ids: true
+  bank_kib: 100
+  large_fonts: embedded_in_app
+  notes: No preinstalled break pack, including SMK emulation; retain empty legacy slots and explicit sample loading.
+
+pads:
+  pattern: steps
+  order: reading
+  colours: screen
+  idle: dark
+  playhead: bright
+  picker:
+    enabled: false
+  velocity: true
+  notes: Edit the displayed 16-step page; < and > select pages of the 64-step sequence.
+
+faders:
+  pattern: banks
+  takeover: soft
+  bank_button: FADER BANK
+  track_group_button: KNOB BANK
+  track_groups:
+    - [1, 2, 3, 4]
+    - [5, 6, 7, 8]
+  banks:
+    A: [track level, track level, track level, track level]
+    B: [track filter, track filter, track filter, track filter]
+    C: [track reverb send, track reverb send, track reverb send, track reverb send]
+    D: [track delay send, track delay send, track delay send, track delay send]
+  fixed: []
+  screen: bank_screen
+  notes: Proposed bank purposes approved subject to Loom supporting them; verify filter and FX send semantics.
+
+wheels:
+  pitch:
+    target: bend
+    range_semitones: 2
+    applies_to: null           # Owner explicitly deferred scope.
+  mod:
+    target: modulation
+    detail: Canonical modulation-wheel purpose; confirm existing Loom CC1 behaviour before choosing implementation.
+  calibration: auto
+
+rules:
+  no_doubles: false
+  doubles_allowed:
+    - Fader-bank access to parameters also available through knobs.
+
+knobs:
+  layout: fm1
+  K1: master
+  K2: select
+  K3: algorithm
+  K4: presets
+  K5: dial 1
+  K6: dial 2
+  K7: dial 3
+  K8: dial 4
+  step: detent
+  pages: {}
+  notes: Preserve Loom's actual main-encoder order; verify before final mapping approval.
+
+buttons:
+  map: printed
+  names: firmware
+  extra:
+    KNOB BANK: Toggle fader tracks 1-4 / 5-8; show the active group.
+    FADER BANK: Cycle fader parameter banks; show the active bank.
+    "<": Previous 16-step sequence page.
+    ">": Next 16-step sequence page.
+  notes: Closest matching names and functions, including SMK PATCH for Loom HOME; full table pending inspection.
+
+screen:
+  style: keep
+  colours: Existing Loom track and group colours.
+  rules:
+    - Preserve Loom's name, logo, boot and useful UI structure.
+    - Label knobs K1-K8 to match the SMK panel; retain Loom's existing on-screen button labels.
+    - Show the value and a short hint for the control touched.
+    - Keep consistent colours on the screen and pads.
+    - Make fader bank and track group visible.
+    - No hidden modes; play first, few menus.
+
+pedal: null                   # Not yet decided by owner.
+modes: {}                     # Inspect for additional frame-owning UIs before mapping.
+
+verification:
+  setup_approved: true
+  simulator: https://joakimeriksson.github.io/fm1-emu/smk37/?fw=local&mhz=120
+  simulator_boot: Owner reports the development firmware works in this simulator.
+  hardware_install: Owner only, after explicit approval and verified full flash backup.
+  fm1_baseline: Hardware build passes; app/package/loader hashes retained in the workspace fm1-reference.sha256.
+  protected_flash:
+    - 0x00000-0x03FFF
+    - 0xC0000-0xC1FFF
+    - 0xF4000-0xFDFFF
+    - 0xFF000-0xFFFFF
+  flash_guards: Preserve the reference allow-list, static asserts and RAM-driver second guard.
+  first_boot: Clear untagged stock settings in writable storage; never factory calibration or recovery data.
+
+open_questions:
+  - Wheel scope (selected track or all tracks), explicitly deferred by owner.
+  - Confirm modulation-wheel semantics after inspecting Loom's existing implementation.
+  - Verify physical encoder direction/order and button mappings in simulator/device testing; on-screen knobs use K1-K8 and buttons retain Loom names.
+  - Verify filter and effect-send bank semantics; Loom has configurable FX tracks.
+  - Complete full-panel coverage in the recorded SMK simulator; native cross-board project/preset backup restore checks pass in both directions.
+  - Decide pedal behaviour, if used.

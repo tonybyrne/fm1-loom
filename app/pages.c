@@ -319,8 +319,13 @@ static int pick_sets(int a)
     }
 }
 /* a MIDI track's eight rows of A_MIDI_CC: each knob's CC (ui.c list_midi_knob reads the digit back) */
+#if BOARD_SMK37
+static const char *const MIDI_CC_ROW[8] = {"ENGINE K5 CC", "ENGINE K6 CC", "ENGINE K7 CC", "ENGINE K8 CC",
+    "ENGINE 2 K5 CC", "ENGINE 2 K6 CC", "ENGINE 2 K7 CC", "ENGINE 2 K8 CC"};
+#else
 static const char *const MIDI_CC_ROW[8] = {"KNOB 1 CC", "KNOB 2 CC", "KNOB 3 CC", "KNOB 4 CC", "KNOB 5 CC",
                                            "KNOB 6 CC", "KNOB 7 CC", "KNOB 8 CC"};
+#endif
 /* the weave's ways (pattern.h WV_*): what this pattern keeps of itself */
 static const char *const WEAVE_NAME[NWV] = {"bars", "steps", "rhythm", "pitch"};
 #define LIST_ROWS 40                  /* (HOME's, EDIT's: their pages' knobs, their actions, the sections' names) */
@@ -403,6 +408,9 @@ static int s_eq(const char *a, const char *b)
         a++, b++;
     return *a == *b;
 }
+#if BOARD_SMK37
+#include "smk37/knob_labels.h"
+#endif
 static char *upcase(char *s)
 {
     for (char *c = s; *c; c++)
@@ -1907,6 +1915,9 @@ static void knob_large(int32_t cx, const knob_t *k, int hot, uint16_t vc)
     for (i = 0; k->name[i] && i < sizeof nm - 1u; i++)
         nm[i] = (char)(k->name[i] >= 'A' && k->name[i] <= 'Z' ? k->name[i] + 32 : k->name[i]);
     nm[i] = 0;
+#if BOARD_SMK37
+    nm[0] = 'K';
+#endif
     if (i > 2 && nm[i - 1] == '%' && nm[i - 2] == ' ' && text_w(&FONT_XS, nm) > KL_LW - 2)
         nm[i - 2] = 0;                               /* ("rhythm %": the value says the %) */
     if (text_w(&FONT_XS, nm) > KL_LW - 2 && s_len(nm) > 4) {   /* a few pixels too wide: the letters 1 px closer */
@@ -2002,6 +2013,15 @@ static void draw_knobs(void)
             cv_rect(x, 10, 1, KNB_H - 22, K_LINE);
         if (!k[i].name)
             continue;
+#if BOARD_SMK37
+        char caption[32] = {'K', (char)('5' + i), ' '};
+        if (LARGE) {
+            uint32_t j = 0;
+            while (k[i].name[j] && j < sizeof caption - 4u) { caption[3 + j] = k[i].name[j]; j++; }
+            caption[3 + j] = 0;
+            k[i].name = caption;
+        }
+#endif
         if (LARGE) {
             knob_large(cx, &k[i], hot, vc);
             continue;
@@ -2027,6 +2047,20 @@ static void draw_knobs(void)
             text_fit(cx - (text_w(&FONT_XS, sp + 1) < 48 ? text_w(&FONT_XS, sp + 1) : 48) / 2, 24, &FONT_XS, sp + 1, 48, vc);
         } else
             text_fit(cx - 24, cap_y(12, 28, &FONT_XS), &FONT_XS, k[i].val, 48, vc);
+#if BOARD_SMK37
+        cv_text(x + 5, cap_y(34, 15, &FONT_XS), &FONT_XS, SMK_KNOB_LABEL[4 + i], K_DIM);
+        if (k[i].max > 0) {
+            int32_t bw = 30 * k[i].num / k[i].max;
+            cv_round(x + 24, 41, 30, 6, 3, K_LINE);
+            if (bw > 0) cv_round(x + 24, 41, bw < 6 ? 6 : bw, 6, 3, hot ? K_SEL : K_NOW);
+            if (k[i].live >= 0) {
+                int32_t lx = x + 24 + 24 * k[i].live / k[i].max;
+                cv_round(lx - 1, 39, 8, 10, 4, K_BG);
+                cv_round(lx, 40, 6, 8, 3, K_REC);
+            }
+            knob_tick(&k[i], x + 24, 28, 38);
+        }
+#else
         if (k[i].max > 0) {
             int32_t bw = 44 * k[i].num / k[i].max;
             cv_round(cx - 22, 41, 44, 6, 3, K_LINE);
@@ -2039,6 +2073,7 @@ static void draw_knobs(void)
             }
             knob_tick(&k[i], cx - 22, 42, 38);       /* an LFO moves it: where it is now, a tick across the bar */
         }
+#endif
     }
     cv_blit(0, KNB_Y);
 }
@@ -2278,7 +2313,11 @@ static void page_footer(char *t)
         else if (ui.lockpg)
             s_cat(t, "KNOBS lock|SELECT page|SEL held + KNOB clear");
         else if (ui.trickpg)
+#if BOARD_SMK37
+            s_cat(t, "K5+K7 trick|K6+K8 value");
+#else
             s_cat(t, "KNOB 1 3 trick|KNOB 2 4 value");
+#endif
         else if (ui.chordmode && ui.page == P_STEPS)
             s_cat(t, ui.chord_pool ? "KEYS the pool|SEQ exit" : "KEYS the chord|SEQ exit");
         else if (ui.len_key && (ui.held >> (ui.len_key - 1) & 1u))
@@ -2409,6 +2448,9 @@ static const char *const CTL_WORD[] = {"SELECT", "ALGO", "PRESET", "SEL", "HOME"
                                        "BLACK", "SAVE", "EDIT", "SEQ", "ENV", "FX", "LFO", "ARP", "GLO", "KNOBS"};
 static int ctl_is(const char *s, uint32_t n)
 {
+#if BOARD_SMK37
+    if ((n == 2 && s[0] == 'K' && s[1] >= '1' && s[1] <= '8') || (n == 6 && !memcmp(s, "MASTER", 6))) return 1;
+#endif
     for (uint32_t i = 0; i < sizeof CTL_WORD / sizeof CTL_WORD[0]; i++) {
         const char *w = CTL_WORD[i];
         uint32_t j = 0;
@@ -2455,6 +2497,11 @@ static int32_t bot_part(int32_t x, int32_t y, const char *s, uint32_t n, const f
                 b[k] = s[a + k];
             b[k] = 0;
             int enc = s_eq(b, "SELECT") || s_eq(b, "ALGO") || s_eq(b, "PRESET") || s_eq(b, "KNOBS");
+#if BOARD_SMK37
+            enc |= s_eq(b, "MASTER") || (b[0] == 'K' && b[1] >= '1' && b[1] <= '8' && !b[2]);
+            const char *label = smk_knob_label(b);
+            if (label != b) s_cat(b, label);
+#endif
             int32_t pad = enc ? BOT_PAD_E : BOT_PAD;
             w = text_w(&FONT_XS, b) + 2 * pad;
             if (draw) {
@@ -2542,6 +2589,9 @@ static void draw_footer_as(void)
     uint32_t h = hash_u(2166136261u, (uint32_t)list);
     page_footer(t);
     enc_line(e);
+#if BOARD_SMK37
+    smk_master_hint(e, sizeof e);
+#endif
     if (list)
         *e = 0;
     h = hash_s(h, t);
@@ -2634,6 +2684,15 @@ static const struct { uint8_t btn; uint32_t pages; const char *title, *l1, *l2; 
      "then press steps to write them. Hold several to edit them all."},
     {B_EDIT, PG_STEPS, "Lock", "Hold a step and press EDIT, ENV, FX or LFO for its knobs.",
      "Turn one to lock it. Hold SEL and turn it to clear."},
+#if BOARD_SMK37
+    {B_EDIT, PG_ANY, "Engine", "Turn K4 for the next sound.",
+     "Hold EDIT to play the keys or turn K3 for the engine."},
+    {B_ENV, PG_ANY, "Envelope", "The amp's envelope, the filter, its envelope.",
+     "Turn K4 on Filter for its type. A kit's key pages come first."},
+    {B_FX, PG_ANY, "Effects", "Character, sends, FX I, FX II, then Throws: play keys to throw.",
+     "Turn K4 for the effect, SEL for its filter."},
+    {B_LFO, PG_ANY, "LFO", "Type, then its first three knobs.", "Turn K2 for its fourth and fifth."},
+#else
     {B_EDIT, PG_ANY, "Engine", "Press PRESET for the next sound.",
      "Hold EDIT to play the keys or turn ALGORITHM for the engine."},
     {B_ENV, PG_ANY, "Envelope", "The amp's envelope, the filter, its envelope.",
@@ -2641,16 +2700,28 @@ static const struct { uint8_t btn; uint32_t pages; const char *title, *l1, *l2; 
     {B_FX, PG_ANY, "Effects", "Character, sends, FX I, FX II, then Throws: play keys to throw.",
      "Press PRESET for the effect, SEL for its filter."},
     {B_LFO, PG_ANY, "LFO", "Type, then its first three knobs.", "Turn SELECT for its fourth and fifth."},
+#endif
     {B_ARP, PG_ANY, "Players", "Arp, strum, hold or random; last page, Weave.",
      "Random: tap steps for slots, hold one and press SEQ for the pool."},
+#if BOARD_SMK37
+    {B_ARP, PG_STEPS, "Tricks", "Hold a step and press ARP. Turn K5 and K7 for its tricks,",
+     "K6 and K8 for their values. Let go of the step when done."},
+    {B_GLO, PG_ANY, "Mix", "Tap a black key to mute, hold to solo, tap twice to keep it.",
+     "Press SEL for projects. Turn K2 for the master, Setup."},
+#else
     {B_ARP, PG_STEPS, "Tricks", "Hold a step and press ARP. Turn KNOB 1 and 3 for its tricks,",
      "KNOB 2 and 4 for their values. Let go of the step when done."},
     {B_GLO, PG_ANY, "Mix", "Tap a black key to mute, hold to solo, tap twice to keep it.",
      "Press SEL for projects. Turn SELECT for the master, Setup."},
+#endif
     {B_HOME, PG_ANY, "Arrange", "Press white keys for scenes, black keys to mute.",
      "Hold HOME, press REC to undo, PLAY to redo."},
     {B_SEL, PG_ANY, "Lists", "Actions, then knobs. Press SEL to run one.",
+#if BOARD_SMK37
+     "Turn K2 to move, K3 to change it."},
+#else
      "Turn SELECT to move, ALGORITHM to change it."},
+#endif
     {B_SAVE, PG_STEPS, "Save", "Tap to save. Hold a step and press SEL to clear its locks.",
      "Hold SAVE and press white key 1 to 3 to save to that slot."},
     {B_SAVE, PG_SOUND, "Save", "Tap to save the project.",
@@ -3747,7 +3818,11 @@ static void draw_steps_as(void)
         if (!begin_main(h))
             return;
         text_c(120, 40, &FONT_B, TRACK_NAME[trk], K_TEXT);
+#if BOARD_SMK37
+        text_c(120, 62, &FONT_S, "has no steps: turn K3", K_DIM);
+#else
         text_c(120, 62, &FONT_S, "has no steps: turn ALGORITHM", K_DIM);
+#endif
         cv_blit(0, MAIN_Y);
         return;
     }
@@ -5195,7 +5270,11 @@ static void draw_key_filter(void)
     cv_rect(x0, y0 + hh, w, 1, K_LINE);
     if (ft == DF_OFF) {
         cv_rect(x0, y0 + 22, w, 2, K_DIM);
+#if BOARD_SMK37
+        s_cat(s_cat(t, DL_SOUND_NAME[key]), ": no filter. Turn K4 for one");
+#else
         s_cat(s_cat(t, DL_SOUND_NAME[key]), ": no filter. Press PRESET for one");
+#endif
         text_fit(x0, y0 + hh + 3, LY(&FONT_XS, F_CAP), t, w, K_DIM);
         cv_blit(0, MAIN_Y);
         return;
@@ -5363,7 +5442,11 @@ static void draw_filter(void)
     cv_rect(x0, y0 + hh, w, 1, K_LINE);
     if (is_drum(trk) && !dyn) {                      /* the kit's bus filter, switched off */
         cv_rect(x0, y0 + 22, w, 2, K_DIM);
+#if BOARD_SMK37
+        cv_text(x0, y0 + hh + 3, &FONT_XS, "all keys: no bus filter. Turn K4 for one", K_DIM);
+#else
         cv_text(x0, y0 + hh + 3, &FONT_XS, "all keys: no bus filter. Press PRESET for one", K_DIM);
+#endif
         cv_blit(0, MAIN_Y);
         return;
     }
@@ -5567,7 +5650,11 @@ static void draw_players(void)
     if (is_drum(trk)) {
         cv_text(12, 4, &FONT_B, "no player", K_DIM);
         cv_text(12, 24, F_CAP, "a kit's keys are its sounds: no arp, no strum", K_DIM);
+#if BOARD_SMK37
+        cv_text(12, LY(48, 40), LY(&FONT_S, F_CAP), "WEAVE is on the last page (K2)", K_DIM);
+#else
         cv_text(12, LY(48, 40), LY(&FONT_S, F_CAP), "WEAVE is on the last page (SELECT)", K_DIM);
+#endif
         cv_blit(0, MAIN_Y);
         return;
     }
@@ -5956,7 +6043,11 @@ static void draw_glfo(void)
         return;
     if (!sh) {
         text_c(120, 24, &FONT_B, "the shared LFO is off", K_TEXT);
+#if BOARD_SMK37
+        text_c(120, 50, &FONT_S, "turn K5 to pick a shape", K_DIM);
+#else
         text_c(120, 50, &FONT_S, "turn KNOB 1 to pick a shape", K_DIM);
+#endif
     } else {
         cv_rect(x0, cy, w, 1, K_LINE);
         for (int i = 0; i <= 52; i++) {           /* (the random shape: a few steps, as it holds a value a cycle) */

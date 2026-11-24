@@ -58,7 +58,7 @@ class Fake {
   answer(cmd, a) {
     const off = (i) => a[i] | a[i + 1] << 7 | a[i + 2] << 14;
     if (cmd === 25) return [0];
-    if (cmd === 15) return [2, 0, 0, 0, 0, this.count(), 0, 0];
+    if (cmd === 15) return [2, (L.BANK_SIZE / 1024) & 127, (L.BANK_SIZE / 1024) >> 7, 0, 0, this.count(), 0, 0];
     if (cmd === 17) { const o = off(1), n = a[4] | a[5] << 7; return [0, ...a.slice(1, 4), 0, ...L.pack7(this.bank.subarray(o, o + n))]; }
     if (cmd === 11) { this.open = true; this.sent++; this.hdr = new Uint8Array(L.BANK_HDR); this.bank.fill(0xFF, 0, 4096); return [0, 0]; }
     if (cmd === 12) { const o = off(1); this.bank.set(L.unpack7(a.slice(4)).subarray(0, 256), o); return [0, ...a.slice(1, 4), 0]; }

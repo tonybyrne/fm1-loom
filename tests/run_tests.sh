@@ -36,11 +36,20 @@ run sample-bank sh -c "'$PY' tools/loom_samples.py build build/gen/user_bank.bin
     'sweep two=build/gen/wav/sweep.wav:57' && '$PY' tools/loom_samples.py syx build/gen/user_bank.syx \
     'piano two=build/gen/wav/piano.wav:60%16k' 'sweep two=build/gen/wav/sweep.wav:57'"
 run bank-tool "$PY" tests/host/bank_test.py
+run smk-samples "$PY" tests/host/smk37_samples_test.py
+run smk-knob-labels sh -c "$CC -std=c99 -Wall -Wextra -Werror tests/host/smk37_knob_labels_test.c \
+    -o $OUT/smk_knob_labels_test && $OUT/smk_knob_labels_test"
+run smk-packages "$PY" tests/host/smk37_packages_test.py
+run smk-board sh -c "$CC -std=c99 -O1 -Wall -Wextra -Werror -Wno-unused-function -Ibase/bsp/chip \
+    tests/host/smk37_board_test.c -o $OUT/smk_board_test && $OUT/smk_board_test"
+run smk-store sh -c "$CC -std=c99 -O1 -Wall -Wextra -Werror -Wno-unused-function -Ibase/include \
+    tests/host/smk37_store_test.c -o $OUT/smk_store_test && $OUT/smk_store_test"
 # the units' own tests, written beside them (their WAVs in build/host/)
 for t in synth braids drumline fx seq factory; do
     run "$t" sh "tests/host/${t}_test.sh"
 done
 if command -v node >/dev/null 2>&1; then           # the samples page's bank against loom_samples.py's
+    run smk-upload node tests/host/smk37_upload_test.mjs
     run samples-web node tests/host/samples_web.mjs "$PY"
     # the backup page's sample section (app/web/backup/extras.js) against a simulated FM-1 and the command line
     run backup-web node tests/host/backup_web.mjs "$PY"

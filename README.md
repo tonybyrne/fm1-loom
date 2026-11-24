@@ -27,6 +27,8 @@ samples load from their WAV files with `tools/loom_samples.py` (see the manual).
 
 ## Building and testing
 
+**M-Vave SMK-37:** see [SMK-37 instructions](SMK37.md).
+
 LOOM-8 is an app (`app/`) on fm1-base, a git submodule (`base/`): clone with `--recursive`. See `BUILDING.md`.
 `tests/run_tests.sh` runs everything on the host, silently (the audio goes to WAV files). `LICENSING.md` says
 where the code comes from. LOOM-8 is GPL-3.0-only as a whole (`COPYING`), for its acid engine and 909 models; most of its files are

@@ -62,12 +62,14 @@ static void fact_init(void)
             s->name[k] = SMP_FACT[i].name[k];
         s->name[k] = 0;
         moved[i] = -1;
+#if !BOARD_SMK37
 #ifdef PLAT_WEB
         if (!s->n && i >= SMP_FACT_BREAK) {   /* the emulator: the breaks built in (samples.h SMP_WEB) */
             s->adp = SMP_WEB_ADP + SMP_WEB[i - SMP_FACT_BREAK][0];
             s->ck = SMP_WEB_CK + SMP_WEB[i - SMP_FACT_BREAK][1];
             s->n = s->split = SMP_WEB[i - SMP_FACT_BREAK][2];
         }
+#endif
 #endif
     }
     for (i = 0; i < SMP_NUSER; i++) {           /* "user 1" .. "user 32" */

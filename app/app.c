@@ -28,11 +28,18 @@ static int load_force = -1;             /* the script's "load N": the guard sees
 #endif
 
 _Static_assert(OBJ_NOBJ == 24 && OBJ_PROJ0 == 2, "the store map lists every object (APP_STORE_MAP)");
+#if BOARD_SMK37
+_Static_assert(SMP_REG0 == 0xB8000u && SMP_REG0_SIZE == 0x3000u && SMP_REG1 == 0xD4000u &&
+    SMP_REG1 + SMP_REG1_SIZE == 0xEA000u, "SMK sample windows");
+_Static_assert(APP_RES_BASE == 0xC2000u && APP_RES_BASE + APP_RES_SECTORS * 0x1000u <= SMP_REG1,
+    "SMK resources do not overlap samples");
+#else
 _Static_assert(SMP_REG0 >= 0xC1000u && SMP_REG0 + SMP_REG0_SIZE <= 0xDC000u && SMP_REG0 >= PLAT_DATA_LO,
                "the user sample bank's first window between the project slots and the panel calibration");
 _Static_assert(SMP_REG1 == PLAT_XDATA1_LO && SMP_REG1 + SMP_REG1_SIZE == PLAT_XDATA1_HI &&
                SMP_REG2 == PLAT_XDATA0_LO && SMP_REG2 + SMP_REG2_SIZE == PLAT_XDATA0_HI,
                "the user sample bank's other windows: fm1-base's two extra windows, whole (plat.h)");
+#endif
 _Static_assert(SMP_HDR_USED <= SMP_BANK_HDR, "the bank's entries fit its header");
 
 /* no store object (the calibration, the presets, the projects: APP_STORE_MAP, two sectors each) in a window of the
@@ -40,7 +47,16 @@ _Static_assert(SMP_HDR_USED <= SMP_BANK_HDR, "the bank's entries fit its header"
 static int store_clear_of_bank(void)
 {
     static const uint32_t map[OBJ_NOBJ] = APP_STORE_MAP;
+#if BOARD_SMK37
+    for (unsigned i = 0; i < APP_STORE_POOL_N; i++)
+        for (int r = 0; r < SMP_NREG; r++)
+            if (APP_STORE_POOL_ADDR(i) + 0x1000u > smp_reg_off(r) &&
+                APP_STORE_POOL_ADDR(i) < smp_reg_off(r) + smp_reg_size(r)) return 0;
+#endif
     for (int o = 0; o < OBJ_NOBJ; o++)
+#if BOARD_SMK37
+        if (o < OBJ_PROJ0 || o >= OBJ_PROJ0 + NPROJ * PROJ_NOBJ)
+#endif
         for (int r = 0; r < SMP_NREG; r++)
             if (map[o] + 0x2000u > smp_reg_off(r) && map[o] < smp_reg_off(r) + smp_reg_size(r))
                 return 0;
@@ -56,6 +72,13 @@ void loom_lights(uint32_t buttons, uint32_t keys, int glow, uint32_t dim_keys, i
         dim = (dim & ~play) | (dim & play ? LED_PLAY_GREEN : 0u);
     }
     plat_lights(b, keys, dim, dim_keys & ~keys, glow || dim_keys ? 2 : 0);
+#if BOARD_SMK37
+#ifndef PLAT_HOST
+    for (unsigned p = 0; p < 16; p++)
+        smk_pad_led(p, trk_ink(page_trk(ui.page)), keys & (1u << SMK_WHITE[p]) ? 48 :
+            dim_keys & (1u << SMK_WHITE[p]) ? 8 : 0);
+#endif
+#endif
 }
 
 /* ---- the contract */

@@ -1,0 +1,7 @@
+# SMK large type is immutable app data; the host layout audit must still pass.
+wait 300
+large 1
+tap HOME
+wait 100
+shot smk37-large.png
+expect page Arrange

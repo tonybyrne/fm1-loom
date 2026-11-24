@@ -35,28 +35,49 @@
 #define PROJ_NOBJ 7
 enum { OBJ_PANEL, OBJ_PRESETS, OBJ_PROJ0, OBJ_BLE = OBJ_PROJ0 + NPROJ * PROJ_NOBJ, OBJ_NOBJ };
 #define OBJ_PROJ(slot, k) (OBJ_PROJ0 + (slot) * PROJ_NOBJ + (k))
+#if BOARD_SMK37
+#define APP_SMK_DATA_FAMILY "LOOM8"
+#define APP_STORE_MAP {0xB2000u, 0xB4000u, \
+    0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0,0,0,0,0,0,0, 0xB6000u}
+#else
 #define APP_STORE_MAP {0xDC000u, 0xDE000u, \
     0x97000u, 0x99000u, 0x9B000u, 0x9D000u, 0x9F000u, 0xA1000u, 0xA3000u, \
     0xA5000u, 0xA7000u, 0xA9000u, 0xAB000u, 0xAD000u, 0xAF000u, 0xB1000u, \
     0xB3000u, 0xB5000u, 0xB7000u, 0xB9000u, 0xBB000u, 0xBD000u, 0xBF000u, \
     0xFC000u}                          /* OBJ_BLE: the radio's address and pairing, in Felucca's settings pair */
+#endif
 /* the projects' objects pooled (fm1-base storage.c, 2026-10-31): 20 sectors from 0x97000 for the three slots' 21
  * objects, which until 0.12 had a pair each (42 sectors, to 0xC0FFF: the map above, kept for that), so a project of a
  * few KB takes two sectors and the slots share the room; three of 15 KB packed always fit (MEMORY FULL past the room:
  * project.c). The A/B pairs' copies move into the pool at the first boot (st_pool_boot); 0xAB000..0xC0FFF (22
  * sectors, 88 KB) are then free for the 909 samples' resource region */
 #define APP_STORE_POOL
+#if BOARD_SMK37
+#define APP_STORE_POOL_BASE 0x9D000u
+#define APP_STORE_POOL_ADDR(i) ((i) < 18u ? 0x9D000u + (i) * 0x1000u : 0xB0000u + ((i) - 18u) * 0x1000u)
+#else
 #define APP_STORE_POOL_BASE 0x97000u
+#endif
 #define APP_STORE_POOL_N 20u
+#if BOARD_SMK37
+#define APP_STORE_POOL_OLD 20u
+#else
 #define APP_STORE_POOL_OLD 42u
+#endif
 #define APP_STORE_POOL_OBJ0 OBJ_PROJ0
 #define APP_STORE_POOL_OBJN (NPROJ * PROJ_NOBJ)
 /* up to 0.12 a save wrote every stream object past the packed stream as its format word alone (project.c st_flush:
  * PROJ_STREAM, 4 bytes): nothing to keep, so not moved into the pool (a stream object holds data after the word) */
 /* the resource region (fm1-base device/res.c; fm1.toml resources): the 909 cymbals' samples (tools/gen_909res.py), in
  * the sectors the pool freed */
+#if BOARD_SMK37
+#define APP_SMK_RES_BASE 0xC2000u
+#define APP_RES_BASE APP_SMK_RES_BASE
+#define APP_RES_SECTORS 18u
+#else
 #define APP_RES_BASE 0xAB000u
 #define APP_RES_SECTORS 22u
+#endif
 #define APP_STORE_POOL_EMPTY(obj, p, n) \
     ((n) == 4u && ((obj) - OBJ_PROJ0) % PROJ_NOBJ >= 2u && (p)[0] == 2u && !(p)[1] && !(p)[2] && !(p)[3])
 

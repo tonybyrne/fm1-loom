@@ -309,6 +309,9 @@ class Link:
 
 
 def upload(link, image):
+    _, size, _, _ = info(link)
+    if len(image) < 20 or int.from_bytes(image[16:20], "little") != size * 1024 or len(image) > size * 1024:
+        raise ValueError("sample bank and device capacities differ; rebuild for the destination board before uploading")
     t0 = time.time()
     total = len(image) - sio.BANK_HDR
     for cmd, args, timeout, what in frames(image):

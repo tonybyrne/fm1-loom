@@ -38,6 +38,15 @@
 #define SMP_NFENT 12                      /* the bank's entries for the factory set (since 0.8: SMP_E_FACTORY) */
 #define SMP_NENT (SMP_NUSER + SMP_NFENT)  /* the bank's entries: the user slots and the factory set's */
 #define SMP_NAME 12
+#if BOARD_SMK37
+#define SMP_NREG 2
+#define SMP_REG0 0xB8000u
+#define SMP_REG0_SIZE 0x3000u
+#define SMP_REG1 0xD4000u
+#define SMP_REG1_SIZE 0x16000u
+#define SMP_REG2 0u
+#define SMP_REG2_SIZE 0u
+#else
 #define SMP_NREG 3                        /* the bank's windows, in the order it fills them */
 #define SMP_REG0 0xC1000u                 /* the data area after the projects, up to the calibration: 108 KB */
 #define SMP_REG0_SIZE 0x1B000u
@@ -45,6 +54,7 @@
 #define SMP_REG1_SIZE 0x17000u
 #define SMP_REG2 0x93000u                 /* PLAT_XDATA0: 16 KB */
 #define SMP_REG2_SIZE 0x4000u
+#endif
 #define SMP_BANK_SIZE (SMP_REG0_SIZE + SMP_REG1_SIZE + SMP_REG2_SIZE)   /* 216 KB */
 #define SMP_BANK_BASE SMP_REG0            /* flash offset of the bank's header */
 #define SMP_BANK_HDR 2048u                /* the header; the data follows */

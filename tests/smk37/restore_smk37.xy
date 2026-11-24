@@ -1,0 +1,9 @@
+# Run with the FM-1 native simulator after the SMK backup scenario.
+wait 300
+restore app/build/scenarios/smk37-backup/loom.bkp
+expect restore_rc 0
+wait 100
+expect tempo 140
+reboot
+wait 300
+expect tempo 140

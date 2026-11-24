@@ -17,6 +17,7 @@ and play the bank's entries of the factory set, the same bytes (sampleio.ima_enc
 tests and the emulator keep it built in (SMP_FACT_BUILTIN, dsp/sample.c).
 """
 import math
+import os
 import struct
 import sys
 import wave
@@ -224,28 +225,30 @@ def main():
     for name, a, c, n, ls, le, root, bars, rate in rows:
         lines.append(f'    {{"{name}", {a}u, {c}u, {n}u, {ls}u, {le}u, {root}, {bars}, {rate}}},')
     lines.append("};")
-    # the emulator (PLAT_WEB, no flash to fit) keeps the breaks built in, as if the pack were installed
-    wadp, wck, wrows = bytearray(), [], []
-    for name, s, root, loop, bars, rate in breaks():
-        adp, ck = sio.ima_encode(s)
-        wrows.append((len(wadp), len(wck), len(s)))
-        wadp += adp
-        wck += ck
-    lines.append("#ifdef PLAT_WEB")
-    lines.append(f"static const uint8_t SMP_WEB_ADP[{len(wadp)}] = {{")
-    for i in range(0, len(wadp), 24):
-        lines.append("    " + ", ".join(str(b) for b in wadp[i:i + 24]) + ",")
-    lines.append("};")
-    lines.append(f"static const uint32_t SMP_WEB_CK[{len(wck)}] = {{")
-    for i in range(0, len(wck), 8):
-        lines.append("    " + ", ".join(f"0x{c:08X}u" for c in wck[i:i + 8]) + ",")
-    lines.append("};")
-    lines.append("/* the breaks in the factory rows' order (from SMP_FACT_BREAK): ADPCM offset, checkpoint index, samples */")
-    lines.append(f"static const uint32_t SMP_WEB[{len(wrows)}][3] = {{")
-    for a, c, n in wrows:
-        lines.append(f"    {{{a}u, {c}u, {n}u}},")
-    lines.append("};")
-    lines.append("#endif")
+    # Keep SMK emulation's empty break slots consistent with the unbundled hardware bank.
+    if os.environ.get("BOARD") != "smk37":
+        # the emulator (PLAT_WEB, no flash to fit) keeps the breaks built in, as if the pack were installed
+        wadp, wck, wrows = bytearray(), [], []
+        for name, s, root, loop, bars, rate in breaks():
+            adp, ck = sio.ima_encode(s)
+            wrows.append((len(wadp), len(wck), len(s)))
+            wadp += adp
+            wck += ck
+        lines.append("#ifdef PLAT_WEB")
+        lines.append(f"static const uint8_t SMP_WEB_ADP[{len(wadp)}] = {{")
+        for i in range(0, len(wadp), 24):
+            lines.append("    " + ", ".join(str(b) for b in wadp[i:i + 24]) + ",")
+        lines.append("};")
+        lines.append(f"static const uint32_t SMP_WEB_CK[{len(wck)}] = {{")
+        for i in range(0, len(wck), 8):
+            lines.append("    " + ", ".join(f"0x{c:08X}u" for c in wck[i:i + 8]) + ",")
+        lines.append("};")
+        lines.append("/* the breaks in the factory rows' order (from SMP_FACT_BREAK): ADPCM offset, checkpoint index, samples */")
+        lines.append(f"static const uint32_t SMP_WEB[{len(wrows)}][3] = {{")
+        for a, c, n in wrows:
+            lines.append(f"    {{{a}u, {c}u, {n}u}},")
+        lines.append("};")
+        lines.append("#endif")
     Path(sys.argv[1]).parent.mkdir(parents=True, exist_ok=True)
     Path(sys.argv[1]).write_text("\n".join(lines) + "\n")
     if len(sys.argv) > 2:
